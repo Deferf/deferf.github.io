@@ -76,25 +76,6 @@ var app = (function () {
     function set_current_component(component) {
         current_component = component;
     }
-    function get_current_component() {
-        if (!current_component)
-            throw new Error('Function called outside component initialization');
-        return current_component;
-    }
-    function createEventDispatcher() {
-        const component = get_current_component();
-        return (type, detail) => {
-            const callbacks = component.$$.callbacks[type];
-            if (callbacks) {
-                // TODO are there situations where events could be dispatched
-                // in a server (non-DOM) environment?
-                const event = custom_event(type, detail);
-                callbacks.slice().forEach(fn => {
-                    fn.call(component, event);
-                });
-            }
-        };
-    }
 
     const dirty_components = [];
     const binding_callbacks = [];
@@ -472,10 +453,10 @@ var app = (function () {
     			div = element("div");
     			attr_dev(script, "crossorigin", "");
     			if (!src_url_equal(script.src, script_src_value = "https://unpkg.com/@daily-co/daily-js")) attr_dev(script, "src", script_src_value);
-    			add_location(script, file$2, 98, 4, 4049);
+    			add_location(script, file$2, 105, 4, 4418);
     			attr_dev(div, "id", "container");
-    			attr_dev(div, "class", "svelte-1n36p7l");
-    			add_location(div, file$2, 101, 0, 4167);
+    			attr_dev(div, "class", "svelte-1vglb2i");
+    			add_location(div, file$2, 108, 0, 4536);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -519,10 +500,10 @@ var app = (function () {
 
     	const initializeDaily = async () => {
     		const container = document.getElementById("container");
+    		let dailyObject = window.DailyIframe.createFrame(container, { showLeaveButton: true });
 
+    		// Old code used a Svelte store to share the Daily Object with other components
     		// $callFrame = window.DailyIframe.createFrame(container);
-    		let dailyObject = window.DailyIframe.createFrame(container);
-
     		// THis thing awaits 500 for someone to join? Non optimal, but it is progress! :)
     		// dailyObject.on("joined-meeting", async (e)  => {console.log("got into event! :)"); var a = await dailyObject.participants(); await new Promise(resolve => setTimeout(resolve, 1000)); console.log(a);console.log(Object.keys(a)); $participants = a});
     		// dailyObject.on("joined-meeting", async (e) => {
@@ -532,6 +513,7 @@ var app = (function () {
     		//     console.log(Object.keys(a));
     		//     $participants = a;
     		// });
+    		// Handle when the user first joins the meeting
     		dailyObject.on("joined-meeting", initializeChat);
 
     		// dailyObject.on("participant-joined", async (e) => {
@@ -542,15 +524,21 @@ var app = (function () {
     		//     $participants = a;
     		//     showChat();
     		// });
+    		// Handle when another user joints the meeting
+    		// This event is also fired when the user is new to a meeting with pre-existing participants
+    		// So here we handle those events
     		dailyObject.on("participant-joined", someoneJoins);
 
+    		// TO DO 
     		dailyObject.on("participant-left", someoneLeft);
 
+    		// We need to wait the join method to complete
     		await dailyObject.join({
     			url: "https://andresportillo.daily.co/hello"
     		});
     	};
 
+    	// ego is the "me" user used by Talk JS
     	let ego;
 
     	// // Mounts empty chat and initializes the ego object
@@ -619,7 +607,6 @@ var app = (function () {
     	$$self.$capture_state = () => ({
     		callFrame,
     		participants,
-    		createEventDispatcher,
     		initializeDaily,
     		ego,
     		initializeChat,
@@ -667,11 +654,11 @@ var app = (function () {
     			div0 = element("div");
     			i = element("i");
     			i.textContent = "Loading chat...";
-    			add_location(i, file$1, 43, 10, 1418);
-    			add_location(div0, file$1, 43, 4, 1412);
+    			add_location(i, file$1, 43, 10, 1496);
+    			add_location(div0, file$1, 43, 4, 1490);
     			attr_dev(div1, "id", "talkjs-container2");
     			attr_dev(div1, "class", "svelte-1xl2833");
-    			add_location(div1, file$1, 42, 0, 1378);
+    			add_location(div1, file$1, 42, 0, 1456);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -755,9 +742,10 @@ var app = (function () {
     const file = "src\\App.svelte";
 
     function create_fragment(ctx) {
+    	let t0;
     	let div;
     	let frame;
-    	let t;
+    	let t1;
     	let chat;
     	let current;
     	frame = new Frame({ $$inline: true });
@@ -765,21 +753,24 @@ var app = (function () {
 
     	const block = {
     		c: function create() {
+    			t0 = space();
     			div = element("div");
     			create_component(frame.$$.fragment);
-    			t = space();
+    			t1 = space();
     			create_component(chat.$$.fragment);
+    			document.title = "Andres Daily Demo";
     			attr_dev(div, "id", "super_container");
     			attr_dev(div, "class", "svelte-ar5518");
-    			add_location(div, file, 30, 0, 781);
+    			add_location(div, file, 31, 0, 765);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
+    			insert_dev(target, t0, anchor);
     			insert_dev(target, div, anchor);
     			mount_component(frame, div, null);
-    			append_dev(div, t);
+    			append_dev(div, t1);
     			mount_component(chat, div, null);
     			current = true;
     		},
@@ -796,6 +787,7 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
+    			if (detaching) detach_dev(t0);
     			if (detaching) detach_dev(div);
     			destroy_component(frame);
     			destroy_component(chat);
